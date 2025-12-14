@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小偷模拟器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.544.0/dist/umd/lucide.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: radial-gradient(circle at center, #0a0a0a, #121212, #1a1a1a);
+            color: #b0b0b0;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                radial-gradient(circle at 20% 50%, rgba(0, 150, 255, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 80% 20%, rgba(100, 0, 200, 0.05) 0%, transparent 50%),
+                radial-gradient(circle at 40% 80%, rgba(0, 150, 255, 0.05) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .neon-text {
+            background: linear-gradient(90deg, #4fc3f7, #9575cd, #4fc3f7);
+            background-size: 200% auto;
+            color: #000;
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s linear infinite;
+            text-shadow: 0 0 10px rgba(79, 195, 247, 0.2);
+        }
+
+        .neon-border {
+            background: linear-gradient(45deg, #121212, #1e1e1e, #2d2d2d);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .neon-border::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, #4fc3f7, #9575cd, #4fc3f7, #9575cd);
+            background-size: 400% 400%;
+            animation: borderGlow 3s ease-in-out infinite;
+            z-index: -1;
+            border-radius: inherit;
+            opacity: 0.7;
+        }
+
+        .border-gradient {
+            position: relative;
+            border: 1px solid transparent;
+            background: linear-gradient(#1e1e1e, #1e1e1e) padding-box,
+                        linear-gradient(45deg, #4fc3f7, #4caf50, #ffeb3b, #4fc3f7) border-box;
+            background-size: 400% 400%;
+            animation: borderGlow 3s ease-in-out infinite;
+        }
+
+        @keyframes shine {
+            to {
+                background-position: 200% center;
+            }
+        }
+
+        @keyframes borderGlow {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .difficulty-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .difficulty-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 0 15px rgba(79, 195, 247, 0.3), 0 0 30px rgba(79, 195, 247, 0.2);
+        }
+
+        .progress-bar {
+            height: 20px;
+            background-color: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4fc3f7, #9575cd, #4fc3f7);
+            background-size: 200% 100%;
+            width: 0%;
+            transition: width 1s linear;
+            animation: gradientShift 2s ease-in-out infinite;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes gradientShift {
+            0%, 100% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        @keyframes shimmer {
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 100%;
+            }
+        }
+
+        .loading-text {
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            animation: fadeIn 0.5s;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #121212, #1e1e1e);
+            margin: 15% auto;
+            padding: 30px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            border-radius: 15px;
+            animation: slideIn 0.5s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+        }
+
+        .modal-content::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #4fc3f7, #9575cd, #4fc3f7);
+            background-size: 200% 100%;
+            animation: gradientShift 2s ease-in-out infinite;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div id="start-screen" class="text-center">
+        <h1 class="text-5xl font-bold mb-8 neon-text">小偷模拟器</h1>
+        <p class="text-xl mb-12">在这里，享受一场惊心动魄的虚拟偷窃挑战，体验不一样的刺激与乐趣！</p>
+        <button id="start-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-10 rounded-lg text-xl neon-border transition duration-300">
+            开始模拟
+        </button>
+    </div>
+
+    <div id="difficulty-screen" class="hidden text-center w-full max-w-4xl">
+        <h2 class="text-3xl font-bold mb-8 neon-text">选择偷窃模式</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="difficulty-card bg-gray-900 p-6 rounded-lg border border-gray-700 opacity-80" data-difficulty="1" data-time="30">
+                <i data-lucide="star" class="w-12 h-12 mx-auto mb-4 text-gray-500"></i>
+                <h3 class="text-2xl font-bold mb-2 text-gray-400">一星难度</h3>
+                <p class="text-gray-500 mb-4">耗时: 30秒</p>
+                <p class="text-red-400 text-sm">提示: 收益较低，不建议选择</p>
+                <p class="text-gray-500 text-xs mt-2">💸 奖励极少，浪费时间</p>
+            </div>
+            <div class="difficulty-card bg-gray-800 p-6 rounded-lg border border-blue-900" data-difficulty="2" data-time="60">
+                <div class="flex justify-center mb-4">
+                    <i data-lucide="star" class="w-12 h-12 text-blue-400"></i>
+                    <i data-lucide="star" class="w-12 h-12 text-blue-400"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-2 text-blue-300">二星难度</h3>
+                <p class="text-gray-400 mb-4">耗时: 60秒</p>
+                <p class="text-yellow-400 text-sm">提示: 收益中等，适合新手</p>
+                <p class="text-gray-500 text-xs mt-2">⚠️ 成功率不稳定，可能失败</p>
+            </div>
+            <div class="difficulty-card bg-gray-800 p-6 rounded-lg border border-gradient" data-difficulty="3" data-time="120">
+                <div class="flex justify-center mb-4">
+                    <i data-lucide="star" class="w-12 h-12 text-yellow-400"></i>
+                    <i data-lucide="star" class="w-12 h-12 text-yellow-400"></i>
+                    <i data-lucide="star" class="w-12 h-12 text-yellow-400"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-2 text-yellow-300">三星难度</h3>
+                <p class="text-gray-300 mb-4">耗时: 120秒</p>
+                <p class="text-green-300 text-sm">提示: 高风险高回报，有额外收获！</p>
+                <p class="text-yellow-300 font-bold mt-2 animate-pulse">🔥 本次100%成功 🔥</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-screen" class="hidden text-center w-full max-w-2xl">
+        <h2 id="loading-title" class="text-3xl font-bold mb-8 neon-text">正在模拟偷窃...</h2>
+        <p id="loading-subtitle" class="loading-text text-xl mb-8">正在寻找目标... 请勿关闭页面，否则模拟将失败！</p>
+        <div class="progress-bar w-full mb-8">
+            <div id="progress-bar-fill" class="progress-bar-fill"></div>
+        </div>
+        <p id="time-remaining" class="text-lg">剩余时间: <span id="time-left">--:--</span></p>
+    </div>
+
+    <div id="result-modal" class="modal">
+        <div class="modal-content">
+            <h2 class="text-3xl font-bold mb-4 neon-text">模拟成功！</h2>
+            <p id="result-text" class="text-xl mb-8">你被偷走了 <span id="stolen-time" class="font-bold text-red-500">--</span> 秒！</p>
+            <p class="text-gray-400 text-sm mb-6">觉得好玩？分享给朋友一起体验吧！</p>
+            <button id="restart-btn" class="bg-gradient-to-r from-blue-800 to-indigo-900 hover:from-blue-700 hover:to-indigo-800 text-gray-200 font-bold py-3 px-8 rounded-lg text-lg neon-border transition duration-300 shadow-lg transform hover:scale-105">
+                再来一次
+            </button>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        const startScreen = document.getElementById('start-screen');
+        const difficultyScreen = document.getElementById('difficulty-screen');
+        const loadingScreen = document.getElementById('loading-screen');
+        const resultModal = document.getElementById('result-modal');
+
+        const startBtn = document.getElementById('start-btn');
+        const difficultyCards = document.querySelectorAll('.difficulty-card');
+        const restartBtn = document.getElementById('restart-btn');
+
+        const progressBarFill = document.getElementById('progress-bar-fill');
+        const loadingSubtitle = document.getElementById('loading-subtitle');
+        const timeLeftElement = document.getElementById('time-left');
+        const stolenTimeElement = document.getElementById('stolen-time');
+
+        let loadingInterval;
+        let timeLeft;
+        let totalTime;
+        let currentDifficulty;
+
+        startBtn.addEventListener('click', () => {
+            startScreen.classList.add('hidden');
+            difficultyScreen.classList.remove('hidden');
+        });
+
+        difficultyCards.forEach(card => {
+            card.addEventListener('click', () => {
+                totalTime = parseInt(card.dataset.time);
+                currentDifficulty = parseInt(card.dataset.difficulty);
+                timeLeft = totalTime;
+                startLoading();
+            });
+        });
+
+        restartBtn.addEventListener('click', () => {
+            resultModal.style.display = 'none';
+            startScreen.classList.remove('hidden');
+            loadingScreen.classList.add('hidden');
+            progressBarFill.style.width = '0%';
+            clearInterval(loadingInterval);
+        });
+
+        function startLoading() {
+            difficultyScreen.classList.add('hidden');
+            loadingScreen.classList.remove('hidden');
+            
+            let progress = 0;
+            const interval = 1000; // 每秒更新一次
+
+            loadingInterval = setInterval(() => {
+                progress += (interval / (totalTime * 1000)) * 100;
+                progressBarFill.style.width = `${progress}%`;
+                
+                timeLeft--;
+                updateTimeLeft();
+                updateLoadingSubtitle();
+
+                if (progress >= 100) {
+                    clearInterval(loadingInterval);
+                    showResult();
+                }
+            }, interval);
+        }
+
+        function updateTimeLeft() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timeLeftElement.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function updateLoadingSubtitle() {
+            const difficultySubtitles = {
+                1: [
+                    "正在寻找简单目标... 这也太简单了吧",
+                    "发现一个无人看管的钱包... 轻松到手",
+                    "正在快速搜刮... 这种难度简直是小儿科",
+                    "周围没人注意... 偷窃如探囊取物",
+                    "准备撤离... 这种程度的偷窃毫无挑战性",
+                    "任务完成！这种难度也太没意思了"
+                ],
+                2: [
+                    "正在寻找中等难度目标... 请耐心等待",
+                    "发现一个有监控的商店... 正在寻找盲区",
+                    "正在破解简单的安全系统... 技术还不错",
+                    "警报系统已暂时干扰... 动作要快！",
+                    "正在搜刮贵重物品... 收获不错",
+                    "警报即将恢复！正在快速撤离...",
+                    "甩掉保安... 就快成功了！",
+                    "安全到达集合点... 任务完成！"
+                ],
+                3: [
+                    "正在寻找高价值目标... 这将是一次挑战",
+                    "发现一个豪华别墅... 安全系统等级很高",
+                    "正在破解复杂的密码锁... 需要更多时间",
+                    "绕过红外警戒线... 技术精湛！",
+                    "正在入侵主监控系统... 请勿关闭页面！",
+                    "发现保险箱！正在破解密码...",
+                    "警报系统启动！正在释放干扰器...",
+                    "保安已经出动！正在寻找藏身之处...",
+                    "发现密道！正在快速撤离...",
+                    "甩掉特警追击... 太刺激了！",
+                    "正在处理赃物... 收获丰厚！",
+                    "安全逃脱！这才是真正的大盗！"
+                ]
+            };
+            
+            const subtitles = difficultySubtitles[currentDifficulty] || difficultySubtitles[1];
+            loadingSubtitle.textContent = subtitles[Math.floor(Math.random() * subtitles.length)];
+        }
+
+        function showResult() {
+            stolenTimeElement.textContent = totalTime;
+            resultModal.style.display = 'block';
+        }
+
+        // 点击模态框外部关闭
+        window.addEventListener('click', (e) => {
+            if (e.target == resultModal) {
+                resultModal.style.display = 'none';
+                startScreen.classList.remove('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
